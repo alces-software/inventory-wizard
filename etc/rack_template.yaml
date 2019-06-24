@@ -1,0 +1,8 @@
+---
+rack:
+  name: rack
+  mutable:
+    map:
+      1: ''
+    map_dimensions: ''
+    map_pattern: ''

@@ -1,0 +1,8 @@
+---
+asset:
+  name: asset
+  mutable:
+    map:
+      1: ''
+    map_dimensions: '1x1'
+    map_pattern: 'RightDown'
