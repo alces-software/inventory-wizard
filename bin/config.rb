@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'yaml'
-require 'FileUtils'
+require 'fileutils'
 
 $config = 'etc/config.yaml'
 

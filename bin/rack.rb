@@ -2,7 +2,7 @@
 
 require 'yaml'
 require 'highline/import'
-require 'FileUtils'
+require 'fileutils'
 
 
 $rack_template = 'etc/rack_template.yaml'

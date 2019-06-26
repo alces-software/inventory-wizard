@@ -2,7 +2,7 @@
 
 require 'yaml'
 require 'highline/import'
-require 'FileUtils'
+require 'fileutils'
 
 $asset_template = 'etc/asset_template.yaml'
 $config = 'etc/config.yaml'
