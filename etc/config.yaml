@@ -1,0 +1,9 @@
+---
+config:
+  clusters:
+  - name: cluster1
+    location: "/tmp/test/"
+    in_use: false
+  - name: cluster2
+    location: "/tmp/foo"
+    in_use: true

@@ -5,8 +5,14 @@ require 'highline/import'
 require 'FileUtils'
 
 
-$rack_template = 'rack_template.yaml'
-$asset_template = 'asset_template.yaml'
+$rack_template = 'etc/rack_template.yaml'
+$asset_template = 'etc/asset_template.yaml'
+$config = 'etc/config.yaml'
+
+def read_config
+  config_hash = YAML.load(File.read($config))
+  $config_dir = config_hash['config']['clusters'].select {|i| i['in_use']}.first['location']
+end
 
 def create_asset_yaml(name)
   asset_hash = YAML.load(File.read($asset_template))
@@ -16,7 +22,8 @@ def create_asset_yaml(name)
 end
 
 def write_yaml(hash,name)
-  File.open(name + ".yaml","w") do |f|
+  filepath = File.join($config_dir, name)
+  File.open(filepath + ".yaml","w") do |f|
     f.write hash.to_yaml
   end
 end
@@ -26,6 +33,8 @@ def add_asset_to_rack(asset_ru_add,asset_name_add,rack_name_add,rack_hash_add)
   puts rack_hash_add.to_yaml
   write_yaml(rack_hash_add,rack_name_add)
 end
+
+read_config()
 
 puts "Provide name of Rack"
 rackname = gets.chomp

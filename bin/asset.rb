@@ -5,6 +5,12 @@ require 'highline/import'
 require 'FileUtils'
 
 $asset_template = 'etc/asset_template.yaml'
+$config = 'etc/config.yaml'
+
+def read_config
+  config_hash = YAML.load(File.read($config))
+  $config_dir = config_hash['config']['clusters'].select {|i| i['in_use']}.first['location']
+end
 
 def create_asset_yaml(name)
   asset_hash = YAML.load(File.read($asset_template))
@@ -14,7 +20,8 @@ def create_asset_yaml(name)
 end
 
 def write_yaml(hash,name)
-  File.open(name + ".yaml","w") do |f|
+  filepath = File.join($config_dir, name)
+  File.open(filepath + ".yaml","w") do |f|
     f.write hash.to_yaml
   end
 end
@@ -47,7 +54,33 @@ def switch_mapports(asset_hash_map,asset_name_map)
   loc = gets.chomp.to_i
   puts "What's the name of the asset in this port?"
   asset_hash_map[asset_name_map]['mutable']['map'][loc] = gets.chomp.to_s
+  write_yaml(asset_hash_map,asset_name_map)
 end 
+
+def asset_mapupdate(asset_hash,asset_name,sz)
+  map_hash = {}
+  (1..sz).each do |i|
+    map_hash[i] = ''
+  end
+  asset_hash[asset_name]['mutable']['map'] = map_hash
+  rows = 1
+  cols = asset_hash[asset_name]['mutable']['map'].size
+  asset_hash[asset_name]['mutable']['map_dimensions'] = rows.to_s + 'x' + cols.to_s 
+  write_yaml(asset_hash,asset_name)
+end 
+
+def chassis_mapupdate(asset_hash,chassis_name,sz)
+  sz = asset_hash[chassis_name]['mutable']['map'].size
+  map_hash = {}
+  (1..sz).each do |i|
+    puts "What's the name of the asset to be placed into location" + i.to_s 
+    map_hash[i] = gets.chomp.to_s
+  end
+  asset_hash[chassis_name]['mutable']['map'] = map_hash
+ 
+end
+
+read_config()
 
 puts "Provide name of Asset to modify"
 assetname = gets.chomp
@@ -61,8 +94,8 @@ else
   #Rename key of asset and delete old template 'asset' key.
   asset_hash[assetname] = asset_hash.delete('asset')
   asset_hash[assetname]["name"] = assetname
-  puts asset_hash.to_yaml
-  write_yaml(asset_hash,assetname)
+  #puts asset_hash.to_yaml
+  #write_yaml(asset_hash,assetname)
 end
 
 
@@ -77,9 +110,19 @@ case asset_type
     switch_mapports(asset_hash,assetname) unless confirm.downcase == 'n'
     puts asset_hash.to_yaml
   when 'node'
-    puts 'node time'
+    confirm = ask("Do you want to add any map information about this node?") { |yn| yn.limit = 1, yn.validate = /[yn]/i } 
+    puts "What is the size of the map?"  unless confirm.downcase == 'n'
+    sz = gets.chomp.to_i unless confirm.downcase == 'n' 
+    asset_mapupdate(asset_hash,assetname,sz) unless confirm.downcase == 'n'
   when 'chassis'
-    puts 'chassis time'
+    confirm = ask("Do you want to add any nodes/assets to this chassis?") { |yn| yn.limit = 1, yn.validate = /[yn]/i } 
+    puts "How many locations are there in the chassis?"
+    sz = gets.chomp.to_i
+    puts sz
+    asset_mapupdate(asset_hash,assetname,sz) unless confirm.downcase == 'n'
+    chassis_mapupdate(asset_hash,assetname)
 end
+
+write_yaml(asset_hash,assetname)
 
 
