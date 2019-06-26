@@ -9,7 +9,13 @@ $config = 'etc/config.yaml'
 
 def read_config
   config_hash = YAML.load(File.read($config))
-  $config_dir = config_hash['config']['clusters'].select {|i| i['in_use']}.first['location']
+  begin
+    $config_dir = config_hash['config']['clusters'].select {|i| i['in_use']}.first['location']
+    puts "Writing configurations to - #{$config_dir}" 
+  rescue
+    puts "Couldn't read config.yaml - are all clusters disabled?"
+    exit
+  end
 end
 
 def create_asset_yaml(name)
@@ -105,22 +111,26 @@ case asset_type
   when 'switch'
     confirm = ask("Do you want to update the port layout?") { |yn| yn.limit = 1, yn.validate = /[yn]/i }
     switch_updateports(asset_hash,assetname) unless confirm.downcase == 'n'
-    puts asset_hash.to_yaml
-    confirm = ask("Do you want to map a device to a port?") { |yn| yn.limit = 1, yn.validate = /[yn]/i }
-    switch_mapports(asset_hash,assetname) unless confirm.downcase == 'n'
-    puts asset_hash.to_yaml
+    loop do
+      confirm = ask("Do you want to map a device to a port?") { |yn| yn.limit = 1, yn.validate = /[yn]/i }
+      switch_mapports(asset_hash,assetname) unless confirm.downcase == 'n'
+      exit unless confirm.downcase == 'y'
+    end
   when 'node'
     confirm = ask("Do you want to add any map information about this node?") { |yn| yn.limit = 1, yn.validate = /[yn]/i } 
     puts "What is the size of the map?"  unless confirm.downcase == 'n'
     sz = gets.chomp.to_i unless confirm.downcase == 'n' 
     asset_mapupdate(asset_hash,assetname,sz) unless confirm.downcase == 'n'
   when 'chassis'
-    confirm = ask("Do you want to add any nodes/assets to this chassis?") { |yn| yn.limit = 1, yn.validate = /[yn]/i } 
-    puts "How many locations are there in the chassis?"
-    sz = gets.chomp.to_i
-    puts sz
-    asset_mapupdate(asset_hash,assetname,sz) unless confirm.downcase == 'n'
-    chassis_mapupdate(asset_hash,assetname)
+    loop do
+      confirm = ask("Do you want to add any nodes/assets to this chassis?") { |yn| yn.limit = 1, yn.validate = /[yn]/i } 
+      puts "How many locations are there in the chassis?"
+      sz = gets.chomp.to_i
+      puts sz
+      asset_mapupdate(asset_hash,assetname,sz) unless confirm.downcase == 'n'
+      chassis_mapupdate(asset_hash,assetname,sz)
+      exit unless confirm.downcase =='n'
+    end
 end
 
 write_yaml(asset_hash,assetname)

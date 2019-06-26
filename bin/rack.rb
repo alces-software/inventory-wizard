@@ -9,9 +9,15 @@ $rack_template = 'etc/rack_template.yaml'
 $asset_template = 'etc/asset_template.yaml'
 $config = 'etc/config.yaml'
 
-def read_config
+def read_config()
   config_hash = YAML.load(File.read($config))
-  $config_dir = config_hash['config']['clusters'].select {|i| i['in_use']}.first['location']
+  begin
+    $config_dir = config_hash['config']['clusters'].select {|i| i['in_use']}.first['location'] 
+    puts "Writing configurations to - #{$config_dir}"
+  rescue
+    puts "Couldn't read config.yaml - are all clusters disabled?"
+    exit
+  end
 end
 
 def create_asset_yaml(name)
@@ -30,7 +36,6 @@ end
 
 def add_asset_to_rack(asset_ru_add,asset_name_add,rack_name_add,rack_hash_add)
   rack_hash_add[rack_name_add]['mutable']['map'][asset_ru_add.to_i] = asset_name_add
-  puts rack_hash_add.to_yaml
   write_yaml(rack_hash_add,rack_name_add)
 end
 
@@ -58,7 +63,6 @@ else
     map_hash[i] = ''
   end
   rack_hash[rackname]['mutable']['map'] = map_hash
-  puts rack_hash.to_yaml
   write_yaml(rack_hash,rackname)
 end
 
